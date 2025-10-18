@@ -2,202 +2,106 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-<title>Quiz 70 ans — mode chrono (15s)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quiz 70 ans — compat</title>
 <meta name="theme-color" content="#ff4d6d">
 <style>
-  :root {{ --accent:#ff4d6d; --text:#111827; --muted:#6b7280; --ok:#16a34a; --bad:#dc2626; }}
-  *{{box-sizing:border-box}} body{{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:linear-gradient(135deg,#fff0f6,#fffef0);color:var(--text)}}
-  .wrap{{max-width:860px;margin:0 auto;padding:20px}}
-  header{{text-align:center;margin:6px 0 10px}}
-  h1{{margin:0;font-size:1.8rem}} .tag{{display:inline-block;margin-top:8px;background:#ffe4ea;color:var(--accent);padding:6px 10px;border-radius:999px;font-weight:700}}
-  .card{{background:#fff;border-radius:16px;box-shadow:0 8px 24px rgba(0,0,0,.06);padding:16px;margin:10px 0}}
-  .qtext{{font-weight:800;margin-bottom:8px}}
-  .choice{{display:block;padding:12px;border:1px solid #e5e7eb;border-radius:12px;margin:8px 0}}
-  .choice input{{margin-right:10px;transform:translateY(1px)}}
-  .controls{{display:flex;gap:10px;margin-top:10px}}
-  button.primary{{flex:1;padding:12px;border:0;border-radius:12px;background:var(--accent);color:#fff;font-weight:800}}
-  .timerwrap{{height:14px;background:#f3f4f6;border-radius:999px;overflow:hidden;margin:8px 0 2px}}
+  body{{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:#fff7fb}}
+  .wrap{{max-width:860px;margin:0 auto;padding:18px}}
+  .card{{background:#fff;border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.06);padding:14px;margin:10px 0}}
+  .qtext{{font-weight:800;margin-bottom:6px}}
+  .choice{{display:block;padding:10px;border:1px solid #e5e7eb;border-radius:10px;margin:8px 0}}
+  .timerwrap{{height:10px;background:#f3f4f6;border-radius:999px;overflow:hidden;margin:6px 0 2px}}
   .timerbar{{height:100%;background:#f59e0b;width:100%}}
-  .meta{{display:flex;justify-content:space-between;color:var(--muted);font-size:.95rem}}
-  .result{{text-align:center;font-weight:900;font-size:1.6rem;margin-top:8px}}
-  .badge{{display:inline-block;padding:6px 10px;border-radius:10px;font-weight:700}}
-  .ok{{background:#dcfce7;color:var(--ok)}} .bad{{background:#fee2e2;color:var(--bad)}}
-  .admin small{{color:var(--muted)}} .note{{color:var(--muted);font-size:.95rem}}
-  #confetti{{position:fixed;inset:0;pointer-events:none}}
+  button.primary{{padding:12px;border:0;border-radius:12px;background:#ff4d6d;color:#fff;font-weight:800;width:100%}}
+  .note{{color:#6b7280}}
 </style>
 </head>
 <body>
-<canvas id="confetti"></canvas>
+<noscript><div class="wrap"><div class="card">⚠️ Ton navigateur a désactivé JavaScript : active-le pour lancer le quiz.</div></div></noscript>
 <div class="wrap">
-  <header>
-    <h1>🎉 Le Grand Quiz des 70 ans — Mode chrono</h1>
-    <div class="tag">15 secondes par question ⏱️</div>
-  </header>
-
   <div id="screen-start" class="card">
-    <p><b>But :</b> répondre le plus juste possible, une question à la fois. Tu as <b>15 secondes</b> par question. Pas de panique, le gâteau attend tout le monde 🍰</p>
-    <div class="controls"><button id="btnStart" class="primary">Démarrer</button></div>
+    <h2>🎉 Quiz — Mode chrono 15s (compat)</h2>
+    <p>Si le bouton ci-dessous ne marche pas, utilise <b>“Démarrer (compat)”</b>.</p>
+    <button id="btnStart" class="primary">Démarrer</button>
+    <div style="height:8px"></div>
+    <button onclick="window.__startCompat && window.__startCompat()" class="primary">Démarrer (compat)</button>
   </div>
-
   <div id="screen-quiz" class="card" style="display:none">
-    <div class="meta"><div id="progressText"></div><div id="scoreMini"></div></div>
     <div class="timerwrap"><div id="timer" class="timerbar"></div></div>
     <div id="qText" class="qtext"></div>
     <div id="choices"></div>
-    <div class="controls">
-      <button id="btnLock" class="primary">Valider</button>
-    </div>
+    <button id="btnLock" class="primary">Valider</button>
     <div id="feedback" class="note"></div>
   </div>
-
   <div id="screen-end" class="card" style="display:none">
-    <div id="finalScore" class="result"></div>
-    <div id="remarks" style="text-align:center;margin-top:8px"></div>
-    <div class="controls">
-      <button id="btnReplay" class="primary">Rejouer</button>
-    </div>
+    <h2>Résultat</h2>
+    <div id="finalScore"></div>
+    <button id="btnReplay" class="primary">Rejouer</button>
   </div>
-
-  <div class="card admin">
-    <h3>🔐 Mode organisateur</h3>
-    <p class="note">Entre la grille des bonnes réponses pour activer l’auto-correction (stockée en local).</p>
-    <div style="display:grid;grid-template-columns: 140px 1fr;gap:10px;align-items:center">
-      <label>PIN</label>
-      <input id="pin" placeholder="PIN" style="padding:10px;border-radius:10px;border:1px solid #e5e7eb">
-      <label>Grille</label>
-      <input id="key" placeholder="1:A,2:D,3:C..." style="padding:10px;border-radius:10px;border:1px solid #e5e7eb">
-      <div></div><button id="saveKey" class="primary" type="button">Enregistrer ✅</button>
-    </div>
-    <small>Format : <b>1:A,2:B,3:D,...</b> (A=0, B=1, C=2, D=3)</small>
-  </div>
-
-  <div class="card note">Lien de ce quiz : <a href="https://votre-lien-quiz.example/didier70-15s">https://votre-lien-quiz.example/didier70-15s</a></div>
 </div>
 
 <script>
-const QUESTIONS = [{"q": "En quelle année est-il né ?", "choices": ["1954", "1955", "1956", "1957"]}, {"q": "Quel est son deuxième prénom ?", "choices": ["Maurice", "Georges", "Marcel", "Robert"]}, {"q": "Quel est son signe astrologique ?", "choices": ["Verseau", "Bélier", "Cancer", "Balance"]}, {"q": "Quel a été l’entraîneur de son équipe de foot préférée ?", "choices": ["Arsène Wenger", "Aimé Jacquet", "Guy Roux", "Luis Fernandez"]}, {"q": "S’il devait choisir entre match de foot et un bon repas…", "choices": ["Le match", "Le repas", "Les deux devant la télé avec un plateau bien garni"]}, {"q": "Son plat préféré c’est sûrement :", "choices": ["Un bon cassoulet", "Une entrecôte frites", "Un gros plat de pâtes", "Tout ce qui se mange et se ressert"]}, {"q": "Devant la télé il est plutôt ?", "choices": ["Je monte le son en douce (fermez vos gueules)", "Roi de la zapette", "À s’endormir… « mais non je ne dors pas »", "Râler à tout va"]}, {"q": "Quel genre de programme il regarde le plus à la télé ?", "choices": ["Tous les sports qui existent", "Film romantique de l’après-midi (pour une bonne sieste)", "Chaîne info en continu", "Programme pour retrouver sa jeunesse"]}, {"q": "Son plus grand rêve de footballeur…", "choices": ["Marquer un but au Stade de France", "Être sélectionné en équipe de France vétéran", "Jouer un match sans se faire mal aux genoux", "Rester assis et regarder les autres jouer"]}, {"q": "En cuisine il est connu pour ?", "choices": ["Son célèbre barbecue « il y a que moi qui me lève »", "Son plat signature : le gratin de choux-fleurs au flan", "Son talent pour goûter et dire « c’est bon mais… »", "Finir son assiette et dire… « C’est tout ! »"]}, {"q": "Il supporte…", "choices": ["L’équipe locale (depuis toujours… ou pas 😂)", "Le club qui gagne selon la saison", "Personne : il critique tout le monde mais regarde tous les matchs", "Le club de ses petits-enfants (ah mince ils ne font pas de foot)"]}, {"q": "À quel âge il a eu son premier enfant ?", "choices": ["22", "23", "24", "25"]}, {"q": "En tant que papa/papi il est :", "choices": ["Toujours partant pour une petite balade en forêt", "Accompagne fièrement ses petits-enfants dans leurs activités", "Toujours présent", "Un papa/papi en or… un peu rouillé mais toujours aimant"]}];
-const ADMIN_PIN = "didier70";
-const KEY_STORAGE = "didier70_key_15s_v1";
-const TIME_PER_Q = 15; // seconds
+(function(){{
+  console.log("Quiz compat init");
+  const QUESTIONS = [{"q": "En quelle année est-il né ?", "choices": ["1954", "1955", "1956", "1957"]}, {"q": "Quel est son deuxième prénom ?", "choices": ["Maurice", "Georges", "Marcel", "Robert"]}, {"q": "Quel est son signe astrologique ?", "choices": ["Verseau", "Bélier", "Cancer", "Balance"]}, {"q": "Quel a été l’entraîneur de son équipe de foot préférée ?", "choices": ["Arsène Wenger", "Aimé Jacquet", "Guy Roux", "Luis Fernandez"]}, {"q": "S’il devait choisir entre match de foot et un bon repas…", "choices": ["Le match", "Le repas", "Les deux devant la télé avec un plateau bien garni"]}, {"q": "Son plat préféré c’est sûrement :", "choices": ["Un bon cassoulet", "Une entrecôte frites", "Un gros plat de pâtes", "Tout ce qui se mange et se ressert"]}, {"q": "Devant la télé il est plutôt ?", "choices": ["Je monte le son en douce (fermez vos gueules)", "Roi de la zapette", "À s’endormir… « mais non je ne dors pas »", "Râler à tout va"]}, {"q": "Quel genre de programme il regarde le plus à la télé ?", "choices": ["Tous les sports qui existent", "Film romantique de l’après-midi (pour une bonne sieste)", "Chaîne info en continu", "Programme pour retrouver sa jeunesse"]}, {"q": "Son plus grand rêve de footballeur…", "choices": ["Marquer un but au Stade de France", "Être sélectionné en équipe de France vétéran", "Jouer un match sans se faire mal aux genoux", "Rester assis et regarder les autres jouer"]}, {"q": "En cuisine il est connu pour ?", "choices": ["Son célèbre barbecue « il y a que moi qui me lève »", "Son plat signature : le gratin de choux-fleurs au flan", "Son talent pour goûter et dire « c’est bon mais… »", "Finir son assiette et dire… « C’est tout ! »"]}, {"q": "Il supporte…", "choices": ["L’équipe locale (depuis toujours… ou pas 😂)", "Le club qui gagne selon la saison", "Personne : il critique tout le monde mais regarde tous les matchs", "Le club de ses petits-enfants (ah mince ils ne font pas de foot)"]}, {"q": "À quel âge il a eu son premier enfant ?", "choices": ["22", "23", "24", "25"]}, {"q": "En tant que papa/papi il est :", "choices": ["Toujours partant pour une petite balade en forêt", "Accompagne fièrement ses petits-enfants dans leurs activités", "Toujours présent", "Un papa/papi en or… un peu rouillé mais toujours aimant"]}];
+  const TIME_PER_Q = 15;
+  let idx=0, score=0, timer=null, tLeft=TIME_PER_Q, locked=false;
 
-function getKey() {{
-  try {{ return JSON.parse(localStorage.getItem(KEY_STORAGE) || "null"); }} catch(e) {{ return null; }}
-}}
-function saveKeyFromString(s) {{
-  const map = {{}};
-  s.split(',').map(x=>x.trim()).filter(Boolean).forEach(p=>{{
-    const [i, L] = p.split(':').map(z=>z.trim());
-    const val = "ABCD".indexOf((L||'').toUpperCase());
-    if (i && val>=0) map[i]=val;
-  }});
-  localStorage.setItem(KEY_STORAGE, JSON.stringify(map));
-  return map;
-}}
-function prettyKey(map) {{
-  return Object.keys(map).sort((a,b)=>parseInt(a)-parseInt(b)).map(k=>k+":"+"ABCD"[map[k]]).join(", ");
-}}
+  function $ (id){{ return document.getElementById(id); }}
+  function show(id){{ ["screen-start","screen-quiz","screen-end"].forEach(x=>$(x).style.display="none"); $(id).style.display="block"; }}
 
-let idx=0, score=0, given=[], timer=null, tLeft=TIME_PER_Q, locked=false;
+  function render(){{ 
+    const q = QUESTIONS[idx];
+    $("qText").textContent = (idx+1)+") "+q.q;
+    const ch = $("choices"); ch.innerHTML="";
+    (q.choices || []).forEach((c,i)=>{{ 
+      const label = document.createElement("label"); label.className="choice";
+      const input = document.createElement("input"); input.type="radio"; input.name="ans"; input.value=i;
+      label.appendChild(input); label.appendChild(document.createTextNode(" "+c));
+      ch.appendChild(label);
+    }});
+    $("feedback").textContent="";
+    locked=false; tLeft=TIME_PER_Q; tick();
+    if (timer) clearInterval(timer);
+    timer=setInterval(()=>{{ tLeft--; tick(); if(tLeft<=0) lock(); }}, 1000);
+  }}
+  function tick(){{ 
+    const pct = Math.max(0, Math.min(100, Math.round(100*tLeft/TIME_PER_Q)));
+    $("timer").style.width = pct+"%";
+  }}
+  function lock(){{ 
+    if(locked) return; locked=true; if(timer) clearInterval(timer);
+    const sel = document.querySelector('input[name="ans"]:checked');
+    if(sel) score++;
+    $("feedback").textContent = sel? "✅ Réponse enregistrée" : "⏳ Temps écoulé";
+    setTimeout(next, 500);
+  }}
+  function next(){{ 
+    idx++; if(idx>=QUESTIONS.length) return end();
+    render();
+  }}
+  function end(){{ 
+    show("screen-end");
+    $("finalScore").textContent = "Score: "+score+" / "+QUESTIONS.length;
+  }}
+  function start(){{ 
+    try {{ show("screen-quiz"); render(); }} catch(e) {{ console.error(e); alert("Erreur de démarrage: "+e.message); }}
+  }}
+  window.__startCompat = start;
 
-const $ = sel => document.querySelector(sel);
-const $progress = $("#progressText"), $mini = $("#scoreMini"), $timer = $("#timer"), $q = $("#qText"), $choices = $("#choices"), $fb = $("#feedback");
+  function bind(){{ 
+    var btnStart = $("btnStart"); if(btnStart) btnStart.addEventListener("click", start);
+    var btnLock = $("btnLock"); if(btnLock) btnLock.addEventListener("click", lock);
+    var btnReplay = $("btnReplay"); if(btnReplay) btnReplay.addEventListener("click", function(){{ idx=0; score=0; show("screen-start"); }});
+  }}
 
-function setScreen(id) {{
-  ["#screen-start","#screen-quiz","#screen-end"].forEach(s=>$(s).style.display="none");
-  $(id).style.display="block";
-}}
-
-function renderQuestion() {{
-  const q = QUESTIONS[idx];
-  $progress.textContent = `Question ${idx+1} / ${QUESTIONS.length}`;
-  $mini.textContent = `Score: ${score}`;
-  $q.textContent = q.q;
-  $choices.innerHTML = "";
-  q.choices.forEach((c,i)=>{{
-    const label = document.createElement("label"); label.className="choice";
-    const input = document.createElement("input"); input.type="radio"; input.name="ans"; input.value=i;
-    label.appendChild(input); label.appendChild(document.createTextNode(" "+c));
-    $choices.appendChild(label);
-  }});
-  $fb.textContent = "";
-  locked=false;
-  tLeft = TIME_PER_Q;
-  updateTimer();
-  if (timer) clearInterval(timer);
-  timer = setInterval(()=>{{
-    tLeft--; updateTimer();
-    if (tLeft<=0) lockAnswer();
-  }}, 1000);
-}}
-
-function updateTimer() {{
-  const pct = Math.max(0, Math.min(100, Math.round(100*tLeft/TIME_PER_Q)));
-  $timer.style.width = pct + "%";
-}}
-
-function lockAnswer() {{
-  if (locked) return;
-  locked = true;
-  if (timer) clearInterval(timer);
-  const sel = document.querySelector('input[name="ans"]:checked');
-  const ans = sel? parseInt(sel.value,10) : null;
-  given[idx] = ans;
-
-  const key = getKey() || {{}};
-  let correct = null;
-  if (key[idx+1] !== undefined && ans !== null) correct = (ans === key[idx+1]);
-  if (key[idx+1] !== undefined && ans === null) correct = false;
-
-  if (correct === true) {{ score++; $fb.innerHTML = "✅ Bonne réponse !"; confetti(); }}
-  else if (correct === false) {{ $fb.innerHTML = "❌ Mauvaise réponse… Courage !"; }}
-  else {{ $fb.innerHTML = "ℹ️ Mode fun : réponse prise en compte."; }}
-
-  setTimeout(nextQuestion, 600);
-}}
-
-function nextQuestion() {{
-  idx++;
-  if (idx >= QUESTIONS.length) return endQuiz();
-  renderQuestion();
-}}
-
-function endQuiz() {{
-  setScreen("#screen-end");
-  const key = getKey() || {{}};
-  let total = 0;
-  Object.keys(key).forEach(k=>{{ if (parseInt(k)<=QUESTIONS.length) total++; }});
-  const scoreText = total? `Score: ${score} / ${total}` : "Mode fun (aucune grille)";
-  document.getElementById("finalScore").textContent = scoreText;
-  const pct = total? Math.round(100*score/total) : 100;
-  document.getElementById("remarks").innerHTML = pct>=80 ? "<span class='badge ok'>Champion·ne de l'anniv 🏆</span>" :
-    pct>=50 ? "<span class='badge'>Pas mal ! Une part de gâteau en plus et ça passe 🎂</span>" :
-    "<span class='badge bad'>Rattrapage au bar avec Didier 🍻</span>";
-}}
-
-document.getElementById("btnStart").addEventListener("click", ()=>{{ idx=0; score=0; given=[]; setScreen("#screen-quiz"); renderQuestion(); }});
-document.getElementById("btnLock").addEventListener("click", lockAnswer);
-document.getElementById("btnReplay").addEventListener("click", ()=>{{ setScreen("#screen-start"); }});
-
-document.getElementById("saveKey").addEventListener("click", ()=>{{
-  const pin = (document.getElementById("pin").value||"").trim();
-  if (pin !== ADMIN_PIN) {{ alert("PIN incorrect"); return; }}
-  const map = saveKeyFromString((document.getElementById("key").value||"").trim());
-  alert("Grille enregistrée: " + prettyKey(map));
-}});
-
-// Confetti
-function confetti(){{
-  const c = document.getElementById('confetti'); const ctx = c.getContext('2d');
-  let W,H; function res(){{W=c.width=innerWidth;H=c.height=innerHeight}} res(); addEventListener('resize',res);
-  const pieces = Array.from({{length: 120}}, ()=>({{x:Math.random()*W,y:-20-Math.random()*H,s:4+Math.random()*6,a:Math.random()*6,v:1+Math.random()*3}}));
-  const start = performance.now();
-  function tick(t){{ const dt=(t-start)/1000; ctx.clearRect(0,0,W,H);
-    pieces.forEach(p=>{{p.y+=p.v*4;p.x+=Math.sin(p.a+dt*5); ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.a+dt*10);
-      ctx.fillStyle=["#ff4d6d","#ffd166","#06d6a0","#118ab2","#8338ec"][Math.floor(Math.random()*5)]; ctx.fillRect(-p.s/2,-p.s/2,p.s,p.s); ctx.restore();}});
-    if (dt<2) requestAnimationFrame(tick);
-  }} requestAnimationFrame(tick);
-}}
+  if(document.readyState==="loading"){{ 
+    document.addEventListener("DOMContentLoaded", bind);
+  }} else {{ 
+    bind();
+  }}
+}})();
 </script>
 </body>
 </html>

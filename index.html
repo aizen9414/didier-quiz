@@ -2,106 +2,236 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Quiz 70 ans — compat</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>🎂 Super Quiz Anniversaire — 15s</title>
 <meta name="theme-color" content="#ff4d6d">
 <style>
-  body{{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:#fff7fb}}
-  .wrap{{max-width:860px;margin:0 auto;padding:18px}}
-  .card{{background:#fff;border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.06);padding:14px;margin:10px 0}}
-  .qtext{{font-weight:800;margin-bottom:6px}}
-  .choice{{display:block;padding:10px;border:1px solid #e5e7eb;border-radius:10px;margin:8px 0}}
-  .timerwrap{{height:10px;background:#f3f4f6;border-radius:999px;overflow:hidden;margin:6px 0 2px}}
-  .timerbar{{height:100%;background:#f59e0b;width:100%}}
-  button.primary{{padding:12px;border:0;border-radius:12px;background:#ff4d6d;color:#fff;font-weight:800;width:100%}}
-  .note{{color:#6b7280}}
+  :root { --bg1:#fff0f6; --bg2:#f0fdfa; --card:#ffffff; --txt:#111827; --muted:#6b7280; --accent:#ff4d6d; --ok:#16a34a; --bad:#dc2626; }
+  @media (prefers-color-scheme: dark) {
+    :root { --card:#18181b; --txt:#f3f4f6; --muted:#a1a1aa; --bg1:#0f172a; --bg2:#1e293b; }
+    body { background: radial-gradient(1200px 800px at 30% 10%, #1e293b 0, #0f172a 40%, #0b1221 100%) !important; }
+  }
+  *{box-sizing:border-box} html,body{height:100%}
+  body{
+    margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+    background: radial-gradient(1000px 700px at 10% -10%, var(--bg1), transparent 70%),
+                radial-gradient(900px 700px at 110% 10%, var(--bg2), transparent 70%), #fff;
+    color:var(--txt);
+  }
+  .wrap{ max-width:900px; margin:0 auto; padding:20px; }
+  header{ text-align:center; margin-top:8px; }
+  .title{ font-size:1.9rem; font-weight:900; letter-spacing:.2px; }
+  .subtitle{ color:var(--muted); margin-top:6px; }
+  .ribbon{ display:inline-block; background:linear-gradient(90deg,#ffd166,#ff4d6d); color:#fff; padding:6px 12px; border-radius:999px; font-weight:900; margin-top:10px; }
+  .card{ background:var(--card); border-radius:18px; box-shadow:0 20px 45px rgba(0,0,0,.07); padding:18px; margin:12px 0; }
+  .btn{ display:inline-flex; align-items:center; justify-content:center; gap:8px; width:100%; padding:14px 16px; border:0; border-radius:14px; font-size:1.05rem; font-weight:800; cursor:pointer; }
+  .primary{ background:var(--accent); color:#fff; }
+  .ghost{ background:transparent; border:1.5px dashed #e5e7eb; color:var(--muted); }
+  .flex{ display:flex; gap:10px; }
+  .qtext{ font-weight:900; margin:4px 0 8px; }
+  .choice{ display:block; padding:13px 14px; border:1px solid #e5e7eb; border-radius:12px; margin:8px 0; }
+  .choice input{ margin-right:10px; transform:translateY(1px); }
+  .meta{ display:flex; justify-content:space-between; align-items:center; color:var(--muted); font-size:.95rem; margin-bottom:6px; }
+  .timerwrap{ height:14px; background:#f3f4f6; border-radius:999px; overflow:hidden; }
+  .timerbar{ height:100%; width:100%; background:linear-gradient(90deg,#22c55e,#f59e0b,#ef4444); transition:width .2s linear; }
+  .kbd{ font-family: ui-monospace, SFMono-Regular, Menlo, monospace; background:#1118270d; padding:2px 6px; border-radius:6px; }
+  .result{ text-align:center; font-weight:900; font-size:1.7rem; margin-top:6px; }
+  .badge{ display:inline-block; padding:6px 10px; border-radius:10px; font-weight:800; }
+  .ok{ background:#dcfce7; color:var(--ok); } .bad{ background:#fee2e2; color:var(--bad); }
+  .toggle{ display:inline-flex; gap:8px; align-items:center; color:var(--muted); font-size:.95rem; }
+  #confetti{ position:fixed; inset:0; pointer-events:none }
+  .foot{ text-align:center; color:var(--muted); margin:14px 0 40px; }
 </style>
 </head>
 <body>
-<noscript><div class="wrap"><div class="card">⚠️ Ton navigateur a désactivé JavaScript : active-le pour lancer le quiz.</div></div></noscript>
+<canvas id="confetti"></canvas>
 <div class="wrap">
+  <header>
+    <div class="title">🎂 Super Quiz Anniversaire</div>
+    <div class="subtitle">Une question à la fois • <b>15s</b> par question • Ambiance fête 🥳</div>
+    <div class="ribbon">Bonne chance & amuse-toi !</div>
+  </header>
+
   <div id="screen-start" class="card">
-    <h2>🎉 Quiz — Mode chrono 15s (compat)</h2>
-    <p>Si le bouton ci-dessous ne marche pas, utilise <b>“Démarrer (compat)”</b>.</p>
-    <button id="btnStart" class="primary">Démarrer</button>
-    <div style="height:8px"></div>
-    <button onclick="window.__startCompat && window.__startCompat()" class="primary">Démarrer (compat)</button>
+    <p><b>But :</b> répondre juste et vite. Tu as <b>15 secondes</b> par question. Tu peux activer <span class="kbd">Révéler la réponse</span> pour apprendre en jouant.</p>
+    <div class="flex">
+      <button id="btnStart" class="btn primary">🚀 Démarrer</button>
+      <button id="btnHow" class="btn ghost">ℹ️ Comment jouer</button>
+    </div>
+    <div id="how" class="subtitle" style="display:none; margin-top:8px">
+      • Une question s’affiche, choisis ta réponse → <b>Valider</b>.<br>
+      • Si tu n’appuies pas à temps, on passe à la suivante automatiquement.<br>
+      • À la fin, reçois ton score (confettis si tu cartonnes) 🎉
+    </div>
   </div>
+
   <div id="screen-quiz" class="card" style="display:none">
+    <div class="meta">
+      <div id="progressText">Question 1</div>
+      <div>
+        <label class="toggle"><input type="checkbox" id="toggleReveal"> Révéler la bonne réponse</label>
+        &nbsp;&nbsp;<label class="toggle"><input type="checkbox" id="toggleSound" checked> Son</label>
+      </div>
+    </div>
     <div class="timerwrap"><div id="timer" class="timerbar"></div></div>
     <div id="qText" class="qtext"></div>
     <div id="choices"></div>
-    <button id="btnLock" class="primary">Valider</button>
-    <div id="feedback" class="note"></div>
+    <div class="flex">
+      <button id="btnLock" class="btn primary">Valider</button>
+    </div>
+    <div id="feedback" class="subtitle" style="margin-top:8px"></div>
   </div>
+
   <div id="screen-end" class="card" style="display:none">
-    <h2>Résultat</h2>
-    <div id="finalScore"></div>
-    <button id="btnReplay" class="primary">Rejouer</button>
+    <div id="finalScore" class="result"></div>
+    <div id="remarks" style="text-align:center; margin-top:6px"></div>
+    <div class="flex">
+      <button id="btnReplay" class="btn primary">🔁 Rejouer</button>
+      <button id="btnShare" class="btn ghost">📤 Partager</button>
+    </div>
   </div>
+
+  <div class="card">
+    <h3>🔐 Mode organisateur</h3>
+    <p class="subtitle">Entre la grille officielle pour activer l’auto-correction. <span class="kbd">PIN</span> requis.</p>
+    <div style="display:grid; grid-template-columns: 140px 1fr; gap:10px; align-items:center">
+      <label>PIN</label>
+      <input id="pin" placeholder="PIN" style="padding:10px; border-radius:10px; border:1px solid #e5e7eb">
+      <label>Grille (ex: 1:A,2:D,3:C...)</label>
+      <input id="key" placeholder="1:A,2:D,3:C..." style="padding:10px; border-radius:10px; border:1px solid #e5e7eb">
+      <div></div><button id="saveKey" class="btn primary" type="button">Enregistrer ✅</button>
+    </div>
+    <div class="subtitle" style="margin-top:4px">Format : <b>A=0, B=1, C=2, D=3</b></div>
+  </div>
+
+  <div class="foot">© Fête • Quiz mobile — design festif</div>
 </div>
 
 <script>
-(function(){{
-  console.log("Quiz compat init");
-  const QUESTIONS = [{"q": "En quelle année est-il né ?", "choices": ["1954", "1955", "1956", "1957"]}, {"q": "Quel est son deuxième prénom ?", "choices": ["Maurice", "Georges", "Marcel", "Robert"]}, {"q": "Quel est son signe astrologique ?", "choices": ["Verseau", "Bélier", "Cancer", "Balance"]}, {"q": "Quel a été l’entraîneur de son équipe de foot préférée ?", "choices": ["Arsène Wenger", "Aimé Jacquet", "Guy Roux", "Luis Fernandez"]}, {"q": "S’il devait choisir entre match de foot et un bon repas…", "choices": ["Le match", "Le repas", "Les deux devant la télé avec un plateau bien garni"]}, {"q": "Son plat préféré c’est sûrement :", "choices": ["Un bon cassoulet", "Une entrecôte frites", "Un gros plat de pâtes", "Tout ce qui se mange et se ressert"]}, {"q": "Devant la télé il est plutôt ?", "choices": ["Je monte le son en douce (fermez vos gueules)", "Roi de la zapette", "À s’endormir… « mais non je ne dors pas »", "Râler à tout va"]}, {"q": "Quel genre de programme il regarde le plus à la télé ?", "choices": ["Tous les sports qui existent", "Film romantique de l’après-midi (pour une bonne sieste)", "Chaîne info en continu", "Programme pour retrouver sa jeunesse"]}, {"q": "Son plus grand rêve de footballeur…", "choices": ["Marquer un but au Stade de France", "Être sélectionné en équipe de France vétéran", "Jouer un match sans se faire mal aux genoux", "Rester assis et regarder les autres jouer"]}, {"q": "En cuisine il est connu pour ?", "choices": ["Son célèbre barbecue « il y a que moi qui me lève »", "Son plat signature : le gratin de choux-fleurs au flan", "Son talent pour goûter et dire « c’est bon mais… »", "Finir son assiette et dire… « C’est tout ! »"]}, {"q": "Il supporte…", "choices": ["L’équipe locale (depuis toujours… ou pas 😂)", "Le club qui gagne selon la saison", "Personne : il critique tout le monde mais regarde tous les matchs", "Le club de ses petits-enfants (ah mince ils ne font pas de foot)"]}, {"q": "À quel âge il a eu son premier enfant ?", "choices": ["22", "23", "24", "25"]}, {"q": "En tant que papa/papi il est :", "choices": ["Toujours partant pour une petite balade en forêt", "Accompagne fièrement ses petits-enfants dans leurs activités", "Toujours présent", "Un papa/papi en or… un peu rouillé mais toujours aimant"]}];
-  const TIME_PER_Q = 15;
-  let idx=0, score=0, timer=null, tLeft=TIME_PER_Q, locked=false;
+// Data
+const QUESTIONS = [{"q": "En quelle année est-il né ?", "choices": ["1954", "1955", "1956", "1957"]}, {"q": "Quel est son deuxième prénom ?", "choices": ["Maurice", "Georges", "Marcel", "Robert"]}, {"q": "Quel est son signe astrologique ?", "choices": ["Verseau", "Bélier", "Cancer", "Balance"]}, {"q": "Quel a été l’entraîneur de son équipe de foot préférée ?", "choices": ["Arsène Wenger", "Aimé Jacquet", "Guy Roux", "Luis Fernandez"]}, {"q": "S’il devait choisir entre match de foot et un bon repas…", "choices": ["Le match", "Le repas", "Les deux devant la télé avec un plateau bien garni"]}, {"q": "Son plat préféré c’est sûrement :", "choices": ["Un bon cassoulet", "Une entrecôte frites", "Un gros plat de pâtes", "Tout ce qui se mange et se ressert"]}, {"q": "Devant la télé il est plutôt ?", "choices": ["Je monte le son en douce (fermez vos gueules)", "Roi de la zapette", "À s’endormir… « mais non je ne dors pas »", "Râler à tout va"]}, {"q": "Quel genre de programme il regarde le plus à la télé ?", "choices": ["Tous les sports qui existent", "Film romantique de l’après-midi (pour une bonne sieste)", "Chaîne info en continu", "Programme pour retrouver sa jeunesse"]}, {"q": "Son plus grand rêve de footballeur…", "choices": ["Marquer un but au Stade de France", "Être sélectionné en équipe de France vétéran", "Jouer un match sans se faire mal aux genoux", "Rester assis et regarder les autres jouer"]}, {"q": "En cuisine il est connu pour ?", "choices": ["Son célèbre barbecue « il y a que moi qui me lève »", "Son plat signature : le gratin de choux-fleurs au flan", "Son talent pour goûter et dire « c’est bon mais… »", "Finir son assiette et dire… « C’est tout ! »"]}, {"q": "Il supporte…", "choices": ["L’équipe locale (depuis toujours… ou pas 😂)", "Le club qui gagne selon la saison", "Personne : il critique tout le monde mais regarde tous les matchs", "Le club de ses petits-enfants (ah mince ils ne font pas de foot)"]}, {"q": "À quel âge il a eu son premier enfant ?", "choices": ["22", "23", "24", "25"]}, {"q": "En tant que papa/papi il est :", "choices": ["Toujours partant pour une petite balade en forêt", "Accompagne fièrement ses petits-enfants dans leurs activités", "Toujours présent", "Un papa/papi en or… un peu rouillé mais toujours aimant"]}];
+const TIME_PER_Q = 15;
+const KEY_STORAGE = "party_quiz_key_v1";
+const ADMIN_PIN = "didier70";
 
-  function $ (id){{ return document.getElementById(id); }}
-  function show(id){{ ["screen-start","screen-quiz","screen-end"].forEach(x=>$(x).style.display="none"); $(id).style.display="block"; }}
+// State
+let idx=0, score=0, tLeft=TIME_PER_Q, timer=null, locked=false, lastCorrect=null;
 
-  function render(){{ 
-    const q = QUESTIONS[idx];
-    $("qText").textContent = (idx+1)+") "+q.q;
-    const ch = $("choices"); ch.innerHTML="";
-    (q.choices || []).forEach((c,i)=>{{ 
-      const label = document.createElement("label"); label.className="choice";
-      const input = document.createElement("input"); input.type="radio"; input.name="ans"; input.value=i;
-      label.appendChild(input); label.appendChild(document.createTextNode(" "+c));
-      ch.appendChild(label);
-    }});
-    $("feedback").textContent="";
-    locked=false; tLeft=TIME_PER_Q; tick();
-    if (timer) clearInterval(timer);
-    timer=setInterval(()=>{{ tLeft--; tick(); if(tLeft<=0) lock(); }}, 1000);
-  }}
-  function tick(){{ 
-    const pct = Math.max(0, Math.min(100, Math.round(100*tLeft/TIME_PER_Q)));
-    $("timer").style.width = pct+"%";
-  }}
-  function lock(){{ 
-    if(locked) return; locked=true; if(timer) clearInterval(timer);
-    const sel = document.querySelector('input[name="ans"]:checked');
-    if(sel) score++;
-    $("feedback").textContent = sel? "✅ Réponse enregistrée" : "⏳ Temps écoulé";
-    setTimeout(next, 500);
-  }}
-  function next(){{ 
-    idx++; if(idx>=QUESTIONS.length) return end();
-    render();
-  }}
-  function end(){{ 
-    show("screen-end");
-    $("finalScore").textContent = "Score: "+score+" / "+QUESTIONS.length;
-  }}
-  function start(){{ 
-    try {{ show("screen-quiz"); render(); }} catch(e) {{ console.error(e); alert("Erreur de démarrage: "+e.message); }}
-  }}
-  window.__startCompat = start;
+// Utilities
+const $ = s => document.querySelector(s);
+function getKey(){ try{ return JSON.parse(localStorage.getItem(KEY_STORAGE)||"null"); }catch(e){ return null; } }
+function saveKeyFromString(s){
+  const map={};
+  s.split(',').map(x=>x.trim()).filter(Boolean).forEach(p=>{
+    const [i, L] = p.split(':').map(z=>z.trim());
+    const val = "ABCD".indexOf((L||'').toUpperCase());
+    if(i && val>=0) map[i]=val;
+  });
+  localStorage.setItem(KEY_STORAGE, JSON.stringify(map));
+  return map;
+}
+function prettyKey(map){ return Object.keys(map).sort((a,b)=>parseInt(a)-parseInt(b)).map(k=>k+":"+"ABCD"[map[k]]).join(", "); }
 
-  function bind(){{ 
-    var btnStart = $("btnStart"); if(btnStart) btnStart.addEventListener("click", start);
-    var btnLock = $("btnLock"); if(btnLock) btnLock.addEventListener("click", lock);
-    var btnReplay = $("btnReplay"); if(btnReplay) btnReplay.addEventListener("click", function(){{ idx=0; score=0; show("screen-start"); }});
-  }}
+// Sounds (tiny beeps)
+let beepCtx=null;
+function beep(freq=880, ms=80){
+  if(!$("#toggleSound").checked) return;
+  try{
+    beepCtx = beepCtx || new (window.AudioContext||window.webkitAudioContext)();
+    const o = beepCtx.createOscillator(), g = beepCtx.createGain();
+    o.frequency.value = freq; o.type="square";
+    g.gain.value = 0.03;
+    o.connect(g); g.connect(beepCtx.destination);
+    o.start();
+    setTimeout(()=>{o.stop();}, ms);
+  }catch(e){/* ignore */}
+}
 
-  if(document.readyState==="loading"){{ 
-    document.addEventListener("DOMContentLoaded", bind);
-  }} else {{ 
-    bind();
-  }}
-}})();
+// Confetti
+function confetti(){
+  const c = document.getElementById('confetti'); const ctx = c.getContext('2d');
+  let W,H; function res(){W=c.width=innerWidth;H=c.height=innerHeight} res(); addEventListener('resize',res);
+  const pieces = Array.from({length: 150}, ()=>({x:Math.random()*W,y:-20-Math.random()*H,s:4+Math.random()*6,a:Math.random()*6,v:1+Math.random()*3}));
+  const start = performance.now();
+  function tick(t){ const dt=(t-start)/1000; ctx.clearRect(0,0,W,H);
+    pieces.forEach(p=>{p.y+=p.v*4;p.x+=Math.sin(p.a+dt*5); ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.a+dt*10);
+      ctx.fillStyle=["#ff4d6d","#ffd166","#06d6a0","#118ab2","#8338ec"][Math.floor(Math.random()*5)]; ctx.fillRect(-p.s/2,-p.s/2,p.s,p.s); ctx.restore();});
+    if(dt<2.2) requestAnimationFrame(tick);
+  } requestAnimationFrame(tick);
+}
+
+// Flow
+function setScreen(id){ ["#screen-start","#screen-quiz","#screen-end"].forEach(s=>$(s).style.display="none"); $(id).style.display="block"; }
+function renderQuestion(){
+  const q = QUESTIONS[idx];
+  $("#progressText").textContent = `Question ${idx+1} / ${QUESTIONS.length}`;
+  $("#qText").textContent = q.q;
+  const box = $("#choices"); box.innerHTML="";
+  q.choices.forEach((c,i)=>{
+    const label = document.createElement("label"); label.className="choice";
+    const input = document.createElement("input"); input.type="radio"; input.name="ans"; input.value=i;
+    label.appendChild(input); label.appendChild(document.createTextNode(" "+c));
+    box.appendChild(label);
+  });
+  $("#feedback").textContent = ""; locked=false; lastCorrect=null;
+  tLeft = TIME_PER_Q; updateTimer();
+  if (timer) clearInterval(timer);
+  timer = setInterval(()=>{ tLeft--; updateTimer(); if (tLeft<=0) lockAnswer(); }, 1000);
+}
+function updateTimer(){ $("#timer").style.width = Math.max(0, Math.min(100, Math.round(100*tLeft/TIME_PER_Q))) + "%"; }
+function lockAnswer(){
+  if (locked) return; locked=true; if(timer) clearInterval(timer);
+  const sel = document.querySelector('input[name="ans"]:checked');
+  const ans = sel ? parseInt(sel.value,10) : null;
+  const key = getKey() || {};
+  let correct = null;
+  if (key[idx+1] !== undefined) {
+    correct = (ans !== null && ans === key[idx+1]);
+    lastCorrect = key[idx+1];
+  }
+  if (correct===true){ score++; $("#feedback").innerHTML = "✅ Bonne réponse !"; confetti(); beep(1200,70); }
+  else if (correct===false){ $("#feedback").innerHTML = "❌ Mauvaise réponse."; beep(200,120); }
+  else { $("#feedback").innerHTML = "ℹ️ Mode fun : réponse enregistrée."; }
+
+  if ($("#toggleReveal").checked && lastCorrect!==null){
+    const letters = ["A","B","C","D"];
+    const span = document.createElement("div");
+    span.className="subtitle"; span.style.marginTop="6px";
+    span.textContent = "👉 Bonne réponse : " + letters[lastCorrect];
+    $("#feedback").appendChild(span);
+  }
+  setTimeout(nextQuestion, 650);
+}
+function nextQuestion(){ idx++; if (idx>=QUESTIONS.length) return endQuiz(); renderQuestion(); }
+function endQuiz(){
+  setScreen("#screen-end"); const key = getKey() || {}; let total=0;
+  Object.keys(key).forEach(k=>{ if (parseInt(k)<=QUESTIONS.length) total++; });
+  const pct = total? Math.round(100*score/total) : 100;
+  $("#finalScore").textContent = total? `Score: ${score} / ${total} — ${pct}%` : "Mode fun (aucune grille)";
+  $("#remarks").innerHTML = pct>=80 ? "<span class='badge ok'>Champion·ne de la fête 🏆</span>" :
+    pct>=50 ? "<span class='badge'>Pas mal ! Encore une part de gâteau 🎂</span>" :
+    "<span class='badge bad'>Rattrapage au bar 🍻</span>";
+}
+function start(){ setScreen("#screen-quiz"); renderQuestion(); beep(880,80); }
+
+// Bind
+document.addEventListener("DOMContentLoaded", ()=>{
+  $("#btnStart").addEventListener("click", start);
+  $("#btnHow").addEventListener("click", ()=>{ const h=$("#how"); h.style.display = (h.style.display==="none"?"block":"none"); });
+  $("#btnLock").addEventListener("click", lockAnswer);
+  $("#btnReplay").addEventListener("click", ()=>{ idx=0; score=0; setScreen("#screen-start"); });
+  $("#btnShare").addEventListener("click", async ()=>{
+    const url = location.href;
+    if (navigator.share) { try { await navigator.share({ title: "Super Quiz Anniv", url }); } catch(e){} }
+    else { prompt("Copie ce lien :", url); }
+  });
+  $("#saveKey").addEventListener("click", ()=>{
+    const pin = ($("#pin").value||"").trim();
+    if (pin !== ADMIN_PIN) { alert("PIN incorrect"); return; }
+    const map = saveKeyFromString(($("#key").value||"").trim());
+    alert("Grille enregistrée: " + prettyKey(map));
+  });
+});
 </script>
 </body>
 </html>
